@@ -15,7 +15,7 @@ var UsageMessage = ` +----------------------------------+-----------------------
   | Left           h or <Left>      | Rewind          r             |
   | Down           j or <Down>      | Fast-Fwd        f             |
   | Up             k or <Up>        | Play/Pause      <Space>       |
-  | Right          l or <Right>     | Enter Text      /             |
+  | Right          l or <Right>     |                               |
   | Ok/Enter       <Enter>          | Volume Up       + or <Ctrl-K> |
   | Volume Mute    m                | Volume Down     - or <Ctrl-J> |
   | Power Off/On   p                |                               |
@@ -35,18 +35,29 @@ func LogIf(err error) {
 func GetRokuAddress() (string, error) {
 	fmt.Println("Searching for Roku devices...")
 
+	// Get devices
 	devices, err := roku.FindRokuDevices()
-	if err != nil {
-		return "", fmt.Errorf("could not find roku devices: %v", err)
+	if err != nil || len(devices) == 0 {
+		return "", fmt.Errorf("Could not find roku devices: %v", err)
 	}
-	fmt.Println("Devices:")
-	for i, device := range devices {
-		fmt.Printf("[%d] %s (%s)\n", i, device.Addr, device.Name)
-	}
-	char, _, err := keyboard.GetSingleKey()
-	index := int(char - 48)
-	if index < 0 || index >= len(devices) {
-		return "", fmt.Errorf("invalid choice: %d", index)
+	var index int
+
+	// Have user select which device if more than 1
+	if len(devices) > 1 {
+		fmt.Println("Roku Devices:")
+		for i, device := range devices {
+			fmt.Printf("[%d] %s (%s)\n", i, device.Addr, device.Name)
+		}
+
+		fmt.Println("Select a Device:")
+		char, _, err := keyboard.GetSingleKey()
+		if err != nil {
+			return "", fmt.Errorf("Could not selection: %v", err)
+		}
+		index := int(char - 48)
+		if index < 0 || index >= len(devices) {
+			return "", fmt.Errorf("invalid choice: %d", index)
+		}
 	}
 	return devices[index].Addr, nil
 }
