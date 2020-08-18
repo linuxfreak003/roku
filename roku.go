@@ -127,6 +127,7 @@ func NewRemote(addr string) (*Remote, error) {
 		return nil, fmt.Errorf("could not connect to roku: %v", err)
 	}
 	r.Device = info
+	fmt.Println(r.Device.PowerMode)
 	fmt.Printf("Connected to %s in %s\n", r.Device.UserDeviceName, r.Device.UserDeviceLocation)
 	apps, err := r.ActiveApp()
 	if err != nil {
@@ -207,6 +208,7 @@ func (r *Remote) VolumeDown() error  { return r.keypress("VolumeDown") }
 func (r *Remote) VolumeMute() error  { return r.keypress("VolumeMute") }
 func (r *Remote) VolumeUp() error    { return r.keypress("VolumeUp") }
 func (r *Remote) PowerOff() error    { return r.keypress("PowerOff") }
+func (r *Remote) PowerOn() error     { return r.keypress("PowerOn") }
 func (r *Remote) ChannelUp() error   { return r.keypress("ChannelUp") }
 func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
 
