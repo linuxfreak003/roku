@@ -138,6 +138,15 @@ func NewRemote(addr string) (*Remote, error) {
 	return r, nil
 }
 
+func (r *Remote) Refresh() error {
+	info, err := r.DeviceInfo()
+	if err != nil {
+		return fmt.Errorf("could not connect to roku: %v", err)
+	}
+	r.Device = info
+	return nil
+}
+
 func (r *Remote) ActiveApp() (*App, error) {
 	b, err := r.query("active-app")
 	if err != nil {
