@@ -5,7 +5,7 @@ Inspired by https://github.com/ncmiller/roku-cli
 
 The project started out aiming to essentially be a GoLang fork of roku-cli, adding in the options of VolumeUp and VolumeDown buttons.
 
-It is now turning into a Roku library, with accompanying CLI Roku Remote
+It is now turning into a Roku [ECP](https://developer.roku.com/docs/developer-program/debugging/external-control-api.md) library, with accompanying CLI Roku Remote
 
 ## Library
 
@@ -51,5 +51,11 @@ func main() {
 
 ```bash
 go get -u github.com/linuxfreak003/roku/roku
+```
+
+### Usage
+
+```bash
+roku -ip 192.168.1.51
 ```
 
