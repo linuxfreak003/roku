@@ -9,17 +9,17 @@ import (
 	"github.com/linuxfreak003/roku"
 )
 
-var UsageMessage = ` +----------------------------------+-------------------------------+
-  | Back           B, u, or <Backsp>| Replay          R             |
-  | Home           H                | Info/Settings   i             |
-  | Left           h or <Left>      | Rewind          r             |
-  | Down           j or <Down>      | Fast-Fwd        f             |
-  | Up             k or <Up>        | Play/Pause      <Space>       |
-  | Right          l or <Right>     |                               |
-  | Ok/Enter       <Enter>          | Volume Up       + or <Ctrl-K> |
-  | Volume Mute    m                | Volume Down     - or <Ctrl-J> |
-  | Power Off/On   p                |                               |
-  +---------------------------------+-------------------------------+
+var UsageMessage = ` +----------------------------------+----------------------------------+
+  | Left           h or <Left>      | Rewind          r                |
+  | Down           j or <Down>      | Fast-Fwd        f                |
+  | Up             k or <Up>        | Replay          R                |
+  | Right          l or <Right>     | Play/Pause      <Space>          |
+  | Volume Up      + or <Ctrl-K>    | Ok/Enter        <Enter>          |
+  | Volume Down    - or <Ctrl-J>    | Back            B, u, or <Backsp>|
+  | Volume Mute    m                | Home            H                |
+  | Power Off/On   p                | Info/Settings   i                |
+  | List Apps      a                | Player Status   s                |
+  +---------------------------------+----------------------------------+
   (press q, Esc, or Ctrl-C to exit)`
 
 var NoDevicesError = fmt.Errorf(`Could not find any roku devices.
@@ -100,15 +100,16 @@ func main() {
 		log.Fatalf("could not create remote: %v", err)
 	}
 
-	fmt.Printf("Mode: %s\n", r.Device.PowerMode)
 	fmt.Printf("Connected to %s in %s\n", r.Device.UserDeviceName, r.Device.UserDeviceLocation)
+	fmt.Printf("  on %s network '%s'\n", r.Device.NetworkType, r.Device.NetworkName)
+	fmt.Printf("Mode: %s\n", r.Device.PowerMode)
 
 	active, err := r.ActiveApp()
 	if err != nil {
 		log.Printf("could not get apps: %v", err)
 	}
 
-	fmt.Printf("Active App: %v\n", active)
+	fmt.Printf("Active App: %v\n", active.Name)
 
 	Usage()
 
@@ -119,11 +120,14 @@ func main() {
 	defer keyboard.Close()
 
 	CommandLoop(r)
+	fmt.Printf("\nShutting down...\n")
 }
 
 func CommandLoop(r *roku.Remote) {
 	for {
 		var err error
+
+		fmt.Printf("> ")
 
 		char, key, err := keyboard.GetKey()
 		if err != nil {
@@ -165,6 +169,28 @@ func CommandLoop(r *roku.Remote) {
 			err = r.Rev()
 		case 'f':
 			err = r.Fwd()
+		case 'a':
+			var apps []*roku.App
+
+			apps, err = r.Apps()
+			if err == nil {
+				fmt.Printf("Installed apps:\n")
+
+				for _, app := range apps {
+					fmt.Printf("[%s]\t%s\n", app.Id, app.Name)
+				}
+			}
+		case 's':
+			var ps *roku.PlayerStatus
+
+			ps, err = r.PlayerStatus()
+			if err == nil {
+				fmt.Printf("App: [%s] %s\n", ps.Plugin.Id, ps.Plugin.Name)
+				fmt.Printf("Error: %v State: %s\n", ps.Error, ps.State)
+				fmt.Printf("Bandwidth: %s\n", ps.Plugin.Bandwidth)
+				fmt.Printf("Position: %s\n", ps.Position)
+				fmt.Printf("Live: %v\n", ps.IsLive)
+			}
 		case 'p':
 			if r.Device.PowerMode == "PowerOn" {
 				err = r.PowerOff()

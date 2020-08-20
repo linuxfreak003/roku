@@ -98,6 +98,27 @@ type App struct {
 	Id   string `xml:"id,attr"`
 }
 
+type PlayerStatus struct {
+	XMLName  xml.Name `xml:"player"`
+	Error    bool     `xml:"error,attr"`
+	State    string   `xml:"state,attr"`
+	Plugin   Plugin   `xml:"plugin"`
+	Format   Format   `xml:"format"`
+	Position string   `xml:"position"`
+	IsLive   bool     `xml:"is_live"`
+}
+type Plugin struct {
+	Bandwidth string `xml:"bandwidth,attr"`
+	Id        string `xml:"id,attr"`
+	Name      string `xml:"name,attr"`
+}
+type Format struct {
+	Audio    string `xml:"audio,attr"`
+	Captions string `xml:"captions,attr"`
+	Drm      string `xml:"drm,attr"`
+	Video    string `xml:"video,attr"`
+}
+
 // FindRokuDevices will serach the network and
 // return the ip addresses and server name
 // of any roku devices
@@ -162,6 +183,23 @@ func (r *Remote) ActiveApp() (*App, error) {
 	return app.App, err
 }
 
+// Launch will launch the given App
+func (r *Remote) Launch(app *App) error {
+	return r.launch(app.Id)
+}
+
+// Install will install the given app.
+// Thie requres already knowing the App Id
+// of the App you want to install
+func (r *Remote) Install(app *App) error {
+	return r.install(app.Id)
+}
+
+// Inputs stuff
+func (r *Remote) Input(in string) error {
+	return r.input(in)
+}
+
 // Apps return all the available apps for the device.
 func (r *Remote) Apps() ([]*App, error) {
 	b, err := r.query("apps")
@@ -174,7 +212,7 @@ func (r *Remote) Apps() ([]*App, error) {
 		Apps    []*App   `xml:"app"`
 	}
 
-	var apps = &Apps{}
+	apps := &Apps{}
 	err = xml.Unmarshal(b, apps)
 
 	return apps.Apps, err
@@ -193,9 +231,18 @@ func (r *Remote) DeviceInfo() (*DeviceInfo, error) {
 	return info, err
 }
 
-// MediaPlayer
-// func (r *Remote) MediaPlayer() (*MediaPlayer, error) {
-// }
+// PlayerStatus returns the media player state
+func (r *Remote) PlayerStatus() (*PlayerStatus, error) {
+	b, err := r.query("media-player")
+	if err != nil {
+		return nil, err
+	}
+
+	status := &PlayerStatus{}
+	err = xml.Unmarshal(b, status)
+
+	return status, err
+}
 
 // Each Function here maps to a button press.
 func (r *Remote) Home() error          { return r.keypress("Home") }
@@ -222,6 +269,60 @@ func (r *Remote) PowerOff() error    { return r.keypress("PowerOff") }
 func (r *Remote) PowerOn() error     { return r.keypress("PowerOn") }
 func (r *Remote) ChannelUp() error   { return r.keypress("ChannelUp") }
 func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
+
+func (r *Remote) input(in string) error {
+	URL := fmt.Sprintf("http://%s/input", r.Addr)
+	client := &http.Client{}
+
+	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	if err != nil {
+		return fmt.Errorf("could not build HTTP request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not send HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func (r *Remote) install(appId string) error {
+	URL := fmt.Sprintf("http://%s/install/%s", r.Addr, appId)
+	client := &http.Client{}
+
+	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	if err != nil {
+		return fmt.Errorf("could not build HTTP request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not send HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func (r *Remote) launch(appId string) error {
+	URL := fmt.Sprintf("http://%s/launch/%s", r.Addr, appId)
+	client := &http.Client{}
+
+	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	if err != nil {
+		return fmt.Errorf("could not build HTTP request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not send HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
 
 func (r *Remote) query(cmd string) ([]byte, error) {
 	URL := fmt.Sprintf("http://%s/query/%s", r.Addr, cmd)
