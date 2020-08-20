@@ -241,7 +241,7 @@ func (r *Remote) query(cmd string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-// keypress sends the actual keypress event to the Roku ECP API
+// keypress sends the actual keypress event to the Roku ECP API.
 func (r *Remote) keypress(cmd string) error {
 	URL := fmt.Sprintf("http://%s/keypress/%s", r.Addr, cmd)
 	client := &http.Client{}
@@ -251,7 +251,7 @@ func (r *Remote) keypress(cmd string) error {
 		return fmt.Errorf("could not build HTTP request: %v", err)
 	}
 
-	resp, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("could not send HTTP request: %v", err)
 	}
