@@ -22,6 +22,9 @@ var UsageMessage = ` +----------------------------------+-----------------------
   +---------------------------------+-------------------------------+
   (press q, Esc, or Ctrl-C to exit)`
 
+var NoDevicesError = fmt.Errorf(`Could not find any roku devices.
+Please Try again, or enter IP address manually with '-ip' flag`)
+
 func Usage() {
 	fmt.Println(UsageMessage)
 }
@@ -37,34 +40,46 @@ func GetRokuAddress() (string, error) {
 
 	// Get devices
 	devices, err := roku.FindRokuDevices()
-	if err != nil || len(devices) == 0 {
+	if err != nil {
 		return "", fmt.Errorf("Could not find roku devices: %v", err)
 	}
+
+	if len(devices) == 0 {
+		return "", NoDevicesError
+	}
+
 	var index int
 
 	// Have user select which device if more than 1
 	if len(devices) > 1 {
 		fmt.Println("Roku Devices:")
+
 		for i, device := range devices {
 			fmt.Printf("[%d] %s (%s)\n", i, device.Addr, device.Name)
 		}
 
 		fmt.Println("Select a Device:")
+
+		// Using this method, a user won't actually be able
+		// to select any options higher than '9'
 		char, _, err := keyboard.GetSingleKey()
 		if err != nil {
-			return "", fmt.Errorf("Could not selection: %v", err)
+			return "", fmt.Errorf("Could not get selection: %v", err)
 		}
+
 		index := int(char - 48)
 		if index < 0 || index >= len(devices) {
 			return "", fmt.Errorf("invalid choice: %d", index)
 		}
 	}
+
 	return devices[index].Addr, nil
 }
 
 func main() {
 	var ip string
 	var port int
+
 	flag.StringVar(&ip, "ip", "", "IP address of roku device")
 	flag.IntVar(&port, "port", 8060, "port to use for roku device")
 	flag.Parse()
@@ -87,14 +102,16 @@ func main() {
 
 	Usage()
 
-	// Open Keyborad
+	// Open Keyboard
 	if err := keyboard.Open(); err != nil {
 		panic(err)
 	}
 	defer keyboard.Close()
 
-	// Command loop
-CommandLoop:
+	CommandLoop(r)
+}
+
+func CommandLoop(r *roku.Remote) {
 	for {
 		var err error
 
@@ -109,7 +126,7 @@ CommandLoop:
 
 		switch key {
 		case keyboard.KeyEsc, keyboard.KeyCtrlC, 'q':
-			break CommandLoop
+			return
 		case keyboard.KeyArrowLeft, 'h':
 			err = r.Left()
 		case keyboard.KeyArrowDown, 'j':
@@ -144,10 +161,12 @@ CommandLoop:
 			} else {
 				err = r.PowerOn()
 			}
-			r.Refresh()
+			// Refresh DeviceInfo
+			_ = r.Refresh()
 		default:
-			log.Printf("key does not match any command")
+			log.Printf("'%s' key does not match any command", string(key))
 		}
+
 		LogIf(err)
 	}
 }
