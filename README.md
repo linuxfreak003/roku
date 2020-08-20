@@ -14,6 +14,7 @@ It is now turning into a Roku [ECP](https://developer.roku.com/docs/developer-pr
 ```bash
 go get -u github.com/linuxfreak003/roku
 ```
+or use `go mod`
 
 ### Example
 
@@ -38,6 +39,7 @@ func main() {
     panic(err)
   }
   if r.Device.PowerMode == "PowerOn" {
+    // ignoring errors for brevity
     r.PowerOff()
     r.Refresh()
   }
@@ -59,3 +61,8 @@ go get -u github.com/linuxfreak003/roku/roku
 roku -ip 192.168.1.51
 ```
 
+You can also simply run
+```bash
+roku
+```
+and it will search for Roku devices on the network (takes an extra 3 seconds).

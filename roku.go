@@ -1,3 +1,7 @@
+// Package roku implements a library for
+// interacting with Roku devices using the
+// External Control Protocol (ECP)
+// Example can be found at http://github.com/linuxfreak003/roku
 package roku
 
 import (
@@ -11,16 +15,25 @@ import (
 	ssdp "github.com/bcurren/go-ssdp"
 )
 
+// Remote is the base type for interacting with the Roku
+// Device is populated when a `NewRemote` is called
+// to create a new remote
 type Remote struct {
 	Addr   string
 	Device *DeviceInfo
 }
 
+// RokuDevice is returned by FindRokuDevices
+// For convenience finding Roku's on the network
 type RokuDevice struct {
 	Addr string
 	Name string
 }
 
+// DeviceInfo is the information about the Roku
+// The most useful fields are probably `PowerMode`
+// (To know if device is On/Ready/etc) and maybe
+// the Name and network information
 type DeviceInfo struct {
 	XMLName                     xml.Name `xml:"device-info"`
 	Udn                         string   `xml:"udn"`
@@ -93,11 +106,15 @@ type DeviceInfo struct {
 	DavinciVersion              string   `xml:"davinci-version"`
 }
 
+// App holds the app name and corresponding id
+// The ID is needed to install/open and app
 type App struct {
 	Name string `xml:",chardata"`
 	Id   string `xml:"id,attr"`
 }
 
+// PlayerStatus holds the media status
+// of the app currently running
 type PlayerStatus struct {
 	XMLName  xml.Name `xml:"player"`
 	Error    bool     `xml:"error,attr"`
@@ -119,9 +136,8 @@ type Format struct {
 	Video    string `xml:"video,attr"`
 }
 
-// FindRokuDevices will serach the network and
-// return the ip addresses and server name
-// of any roku devices
+// FindRokuDevices will do and SSDP search to
+// find all Roku devices on the network
 func FindRokuDevices() ([]*RokuDevice, error) {
 	devices, err := ssdp.Search("roku:ecp", 3*time.Second)
 	if err != nil {
@@ -155,6 +171,7 @@ func NewRemote(addr string) (*Remote, error) {
 	return r, nil
 }
 
+// Refresh reloads the devince info on the remote
 func (r *Remote) Refresh() error {
 	info, err := r.DeviceInfo()
 	if err != nil {
@@ -166,6 +183,7 @@ func (r *Remote) Refresh() error {
 	return nil
 }
 
+// ActiveApp returns the app currently running
 func (r *Remote) ActiveApp() (*App, error) {
 	b, err := r.query("active-app")
 	if err != nil {
@@ -183,7 +201,7 @@ func (r *Remote) ActiveApp() (*App, error) {
 	return app.App, err
 }
 
-// Launch will launch the given App
+// Launch will launch a given App
 func (r *Remote) Launch(app *App) error {
 	return r.launch(app.Id)
 }
@@ -195,12 +213,12 @@ func (r *Remote) Install(app *App) error {
 	return r.install(app.Id)
 }
 
-// Inputs stuff
+// Input sends input (not implemented yet)
 func (r *Remote) Input(in string) error {
 	return r.input(in)
 }
 
-// Apps return all the available apps for the device.
+// Apps will get all installed apps fromt he device
 func (r *Remote) Apps() ([]*App, error) {
 	b, err := r.query("apps")
 	if err != nil {
@@ -244,7 +262,8 @@ func (r *Remote) PlayerStatus() (*PlayerStatus, error) {
 	return status, err
 }
 
-// Each Function here maps to a button press.
+// All of the following methods
+// correspond to a keypress event
 func (r *Remote) Home() error          { return r.keypress("Home") }
 func (r *Remote) Rev() error           { return r.keypress("Rev") }
 func (r *Remote) Fwd() error           { return r.keypress("Fwd") }
@@ -261,7 +280,8 @@ func (r *Remote) Backspace() error     { return r.keypress("Backspace") }
 func (r *Remote) Search() error        { return r.keypress("Search") }
 func (r *Remote) Enter() error         { return r.keypress("Enter") }
 
-// Only Available on some Devices.
+// The following keypresses are
+// only available on some devices
 func (r *Remote) VolumeDown() error  { return r.keypress("VolumeDown") }
 func (r *Remote) VolumeMute() error  { return r.keypress("VolumeMute") }
 func (r *Remote) VolumeUp() error    { return r.keypress("VolumeUp") }
@@ -270,6 +290,8 @@ func (r *Remote) PowerOn() error     { return r.keypress("PowerOn") }
 func (r *Remote) ChannelUp() error   { return r.keypress("ChannelUp") }
 func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
 
+// helper method for hitting the `input` endpoint
+// currently unimplemented
 func (r *Remote) input(in string) error {
 	URL := fmt.Sprintf("http://%s/input", r.Addr)
 	client := &http.Client{}
@@ -288,6 +310,7 @@ func (r *Remote) input(in string) error {
 	return nil
 }
 
+// helper method for hitting the `install` endpoint
 func (r *Remote) install(appId string) error {
 	URL := fmt.Sprintf("http://%s/install/%s", r.Addr, appId)
 	client := &http.Client{}
@@ -306,6 +329,7 @@ func (r *Remote) install(appId string) error {
 	return nil
 }
 
+// helper method for hitting the `launch` endpoint
 func (r *Remote) launch(appId string) error {
 	URL := fmt.Sprintf("http://%s/launch/%s", r.Addr, appId)
 	client := &http.Client{}
@@ -324,6 +348,7 @@ func (r *Remote) launch(appId string) error {
 	return nil
 }
 
+// helper method for hitting the `query` endpoint
 func (r *Remote) query(cmd string) ([]byte, error) {
 	URL := fmt.Sprintf("http://%s/query/%s", r.Addr, cmd)
 	client := &http.Client{}
@@ -342,7 +367,7 @@ func (r *Remote) query(cmd string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-// keypress sends the actual keypress event to the Roku ECP API.
+// helper method for hitting the `keypress` endpoint
 func (r *Remote) keypress(cmd string) error {
 	URL := fmt.Sprintf("http://%s/keypress/%s", r.Addr, cmd)
 	client := &http.Client{}
