@@ -1,4 +1,5 @@
 # roku
+[![Documentation](https://godoc.org/github.com/linuxfreak003/roku?status.svg)](http://godoc.org/github.com/linuxfreak003/roku)
 Roku device CLI written in Go
 
 Inspired by https://github.com/ncmiller/roku-cli
