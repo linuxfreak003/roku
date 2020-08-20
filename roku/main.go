@@ -100,6 +100,16 @@ func main() {
 		log.Fatalf("could not create remote: %v", err)
 	}
 
+	fmt.Printf("Mode: %s\n", r.Device.PowerMode)
+	fmt.Printf("Connected to %s in %s\n", r.Device.UserDeviceName, r.Device.UserDeviceLocation)
+
+	active, err := r.ActiveApp()
+	if err != nil {
+		log.Printf("could not get apps: %v", err)
+	}
+
+	fmt.Printf("Active App: %v\n", active)
+
 	Usage()
 
 	// Open Keyboard

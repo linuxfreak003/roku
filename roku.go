@@ -116,25 +116,21 @@ func FindRokuDevices() ([]*RokuDevice, error) {
 	return res, nil
 }
 
-// NewRemote sets up a remote to the given ip
+// NewRemote sets up a remote to the given ip.
 func NewRemote(addr string) (*Remote, error) {
 	if addr == "" {
 		return nil, fmt.Errorf("no address given: %v", addr)
 	}
+
 	r := &Remote{Addr: addr}
+
 	info, err := r.DeviceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to roku: %v", err)
 	}
+
 	r.Device = info
-	fmt.Println(r.Device.PowerMode)
-	fmt.Printf("Connected to %s in %s\n", r.Device.UserDeviceName, r.Device.UserDeviceLocation)
-	apps, err := r.ActiveApp()
-	if err != nil {
-		return nil, fmt.Errorf("could not get apps: %v", err)
-	}
-	fmt.Println(apps)
-	// Check to make sure addr leads to a roku
+
 	return r, nil
 }
 
@@ -143,7 +139,9 @@ func (r *Remote) Refresh() error {
 	if err != nil {
 		return fmt.Errorf("could not connect to roku: %v", err)
 	}
+
 	r.Device = info
+
 	return nil
 }
 
@@ -157,13 +155,14 @@ func (r *Remote) ActiveApp() (*App, error) {
 		XMLName xml.Name `xml:"active-app"`
 		App     *App     `xml:"app"`
 	}
-	var app = &ActiveApp{}
 
+	var app = &ActiveApp{}
 	err = xml.Unmarshal(b, app)
+
 	return app.App, err
 }
 
-// Apps return all the available apps for the device
+// Apps return all the available apps for the device.
 func (r *Remote) Apps() ([]*App, error) {
 	b, err := r.query("apps")
 	if err != nil {
@@ -174,28 +173,31 @@ func (r *Remote) Apps() ([]*App, error) {
 		XMLName xml.Name `xml:"apps"`
 		Apps    []*App   `xml:"app"`
 	}
-	var apps = &Apps{}
 
-	xml.Unmarshal(b, apps)
-	return apps.Apps, nil
+	var apps = &Apps{}
+	err = xml.Unmarshal(b, apps)
+
+	return apps.Apps, err
 }
 
-// DeviceInfo shows the device info for
+// DeviceInfo shows the device info for connected device.
 func (r *Remote) DeviceInfo() (*DeviceInfo, error) {
 	b, err := r.query("device-info")
 	if err != nil {
 		return nil, fmt.Errorf("could not query: %v", err)
 	}
-	var info DeviceInfo
-	xml.Unmarshal(b, &info)
-	return &info, nil
+
+	info := &DeviceInfo{}
+	err = xml.Unmarshal(b, info)
+
+	return info, err
 }
 
 // MediaPlayer
 // func (r *Remote) MediaPlayer() (*MediaPlayer, error) {
 // }
 
-// Each Function here maps to a button press
+// Each Function here maps to a button press.
 func (r *Remote) Home() error          { return r.keypress("Home") }
 func (r *Remote) Rev() error           { return r.keypress("Rev") }
 func (r *Remote) Fwd() error           { return r.keypress("Fwd") }
@@ -212,7 +214,7 @@ func (r *Remote) Backspace() error     { return r.keypress("Backspace") }
 func (r *Remote) Search() error        { return r.keypress("Search") }
 func (r *Remote) Enter() error         { return r.keypress("Enter") }
 
-// Only Available on some Devices
+// Only Available on some Devices.
 func (r *Remote) VolumeDown() error  { return r.keypress("VolumeDown") }
 func (r *Remote) VolumeMute() error  { return r.keypress("VolumeMute") }
 func (r *Remote) VolumeUp() error    { return r.keypress("VolumeUp") }
@@ -224,14 +226,18 @@ func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
 func (r *Remote) query(cmd string) ([]byte, error) {
 	URL := fmt.Sprintf("http://%s/query/%s", r.Addr, cmd)
 	client := &http.Client{}
+
 	req, err := http.NewRequest(http.MethodGet, URL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not build HTTP request: %v", err)
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("could not send HTTP request: %v", err)
 	}
+	defer resp.Body.Close()
+
 	return ioutil.ReadAll(resp.Body)
 }
 
@@ -239,13 +245,17 @@ func (r *Remote) query(cmd string) ([]byte, error) {
 func (r *Remote) keypress(cmd string) error {
 	URL := fmt.Sprintf("http://%s/keypress/%s", r.Addr, cmd)
 	client := &http.Client{}
+
 	req, err := http.NewRequest(http.MethodPost, URL, nil)
 	if err != nil {
 		return fmt.Errorf("could not build HTTP request: %v", err)
 	}
-	_, err = client.Do(req)
+
+	resp, err = client.Do(req)
 	if err != nil {
 		return fmt.Errorf("could not send HTTP request: %v", err)
 	}
+	defer resp.Body.Close()
+
 	return nil
 }
