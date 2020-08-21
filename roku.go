@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	ssdp "github.com/bcurren/go-ssdp"
@@ -213,9 +214,14 @@ func (r *Remote) Install(app *App) error {
 	return r.install(app.Id)
 }
 
-// Input sends input (not implemented yet)
-func (r *Remote) Input(in string) error {
-	return r.input(in)
+// Input sends a string of input
+// (useful for things like filling a search box)
+func (r *Remote) InputString(in string) error {
+	return r.literal_input(in)
+}
+
+func (r *Remote) InputRune(rn rune) error {
+	return r.literal_input(string(rn))
 }
 
 // Apps will get all installed apps fromt he device
@@ -262,53 +268,78 @@ func (r *Remote) PlayerStatus() (*PlayerStatus, error) {
 	return status, err
 }
 
-// All of the following methods
-// correspond to a keypress event
-func (r *Remote) Home() error          { return r.keypress("Home") }
-func (r *Remote) Rev() error           { return r.keypress("Rev") }
-func (r *Remote) Fwd() error           { return r.keypress("Fwd") }
-func (r *Remote) Play() error          { return r.keypress("Play") }
-func (r *Remote) Select() error        { return r.keypress("Select") }
-func (r *Remote) Left() error          { return r.keypress("Left") }
-func (r *Remote) Right() error         { return r.keypress("Right") }
-func (r *Remote) Down() error          { return r.keypress("Down") }
-func (r *Remote) Up() error            { return r.keypress("Up") }
-func (r *Remote) Back() error          { return r.keypress("Back") }
+// Equivalent of pressing Home button on the remote
+func (r *Remote) Home() error { return r.keypress("Home") }
+
+// Equivalent of pressing Rev button on the remote
+func (r *Remote) Rev() error { return r.keypress("Rev") }
+
+// Equivalent of pressing Fwd button on the remote
+func (r *Remote) Fwd() error { return r.keypress("Fwd") }
+
+// Equivalent of pressing Play button on the remote
+func (r *Remote) Play() error { return r.keypress("Play") }
+
+// Equivalent of pressing Select button on the remote
+func (r *Remote) Select() error { return r.keypress("Select") }
+
+// Equivalent of pressing Left button on the remote
+func (r *Remote) Left() error { return r.keypress("Left") }
+
+// Equivalent of pressing Right button on the remote
+func (r *Remote) Right() error { return r.keypress("Right") }
+
+// Equivalent of pressing Down button on the remote
+func (r *Remote) Down() error { return r.keypress("Down") }
+
+// Equivalent of pressing Up button on the remote
+func (r *Remote) Up() error { return r.keypress("Up") }
+
+// Equivalent of pressing Back button on the remote
+func (r *Remote) Back() error { return r.keypress("Back") }
+
+// Equivalent of pressing Instant Replay button on the remote
 func (r *Remote) InstantReplay() error { return r.keypress("InstantReplay") }
-func (r *Remote) Info() error          { return r.keypress("Info") }
-func (r *Remote) Backspace() error     { return r.keypress("Backspace") }
-func (r *Remote) Search() error        { return r.keypress("Search") }
-func (r *Remote) Enter() error         { return r.keypress("Enter") }
 
-// The following keypresses are
-// only available on some devices
-func (r *Remote) VolumeDown() error  { return r.keypress("VolumeDown") }
-func (r *Remote) VolumeMute() error  { return r.keypress("VolumeMute") }
-func (r *Remote) VolumeUp() error    { return r.keypress("VolumeUp") }
-func (r *Remote) PowerOff() error    { return r.keypress("PowerOff") }
-func (r *Remote) PowerOn() error     { return r.keypress("PowerOn") }
-func (r *Remote) ChannelUp() error   { return r.keypress("ChannelUp") }
+// Equivalent of pressing Info button on the remote
+func (r *Remote) Info() error { return r.keypress("Info") }
+
+// Equivalent of pressing Backspace button on the remote
+func (r *Remote) Backspace() error { return r.keypress("Backspace") }
+
+// Equivalent of pressing Search button on the remote
+func (r *Remote) Search() error { return r.keypress("Search") }
+
+// Equivalent of pressing Enter button on the remote
+func (r *Remote) Enter() error { return r.keypress("Enter") }
+
+// Equivalent of pressing Volume Down button on the remote
+// not available on all devices
+func (r *Remote) VolumeDown() error { return r.keypress("VolumeDown") }
+
+// Equivalent of pressing Mute button on the remote
+// not available on all devices
+func (r *Remote) VolumeMute() error { return r.keypress("VolumeMute") }
+
+// Equivalent of pressing Volume Up button on the remote
+// not available on all devices
+func (r *Remote) VolumeUp() error { return r.keypress("VolumeUp") }
+
+// Equivalent of pressing Power button on the remote
+// not available on all devices
+func (r *Remote) PowerOff() error { return r.keypress("PowerOff") }
+
+// Equivalent of pressing Power button on the remote
+// not available on all devices
+func (r *Remote) PowerOn() error { return r.keypress("PowerOn") }
+
+// Equivalent of pressing Channel Up button on the remote
+// not available on all devices
+func (r *Remote) ChannelUp() error { return r.keypress("ChannelUp") }
+
+// Equivalent of pressing Channel Down button on the remote
+// not available on all devices
 func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
-
-// helper method for hitting the `input` endpoint
-// currently unimplemented
-func (r *Remote) input(in string) error {
-	URL := fmt.Sprintf("http://%s/input", r.Addr)
-	client := &http.Client{}
-
-	req, err := http.NewRequest(http.MethodPost, URL, nil)
-	if err != nil {
-		return fmt.Errorf("could not build HTTP request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("could not send HTTP request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	return nil
-}
 
 // helper method for hitting the `install` endpoint
 func (r *Remote) install(appId string) error {
@@ -365,6 +396,18 @@ func (r *Remote) query(cmd string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+// helper method for entering literal input
+func (r *Remote) literal_input(input string) error {
+	for _, c := range input {
+		escaped := url.QueryEscape(string(c))
+		err := r.keypress("Lit_" + escaped)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // helper method for hitting the `keypress` endpoint

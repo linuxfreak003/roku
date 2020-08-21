@@ -19,6 +19,7 @@ var UsageMessage = ` +----------------------------------+-----------------------
   | Volume Mute    m                | Home            H                |
   | Power Off/On   p                | Info/Settings   i                |
   | List Apps      a                | Player Status   s                |
+  | Enter Input    /                |                                  |
   +---------------------------------+----------------------------------+
   (press q, Esc, or Ctrl-C to exit)`
 
@@ -124,10 +125,10 @@ func main() {
 }
 
 func CommandLoop(r *roku.Remote) {
+	fmt.Printf("> ")
+
 	for {
 		var err error
-
-		fmt.Printf("> ")
 
 		char, key, err := keyboard.GetKey()
 		if err != nil {
@@ -139,8 +140,30 @@ func CommandLoop(r *roku.Remote) {
 		}
 
 		switch key {
-		case keyboard.KeyEsc, keyboard.KeyCtrlC, 'q':
+		case keyboard.KeyEsc, keyboard.KeyCtrlC, keyboard.KeyCtrlD, 'q':
 			return
+		case '/':
+			fmt.Printf("Enter Text: ")
+
+			s := ""
+
+			for char, key, err = keyboard.GetKey(); key != keyboard.KeyEnter; char, key, err = keyboard.GetKey() {
+				if err != nil {
+					break
+				}
+
+				val := string(key)
+				if key == 0 {
+					val = string(char)
+				}
+
+				fmt.Printf("%s", val)
+				s += val
+			}
+
+			err = r.InputString(s + "\n")
+
+			fmt.Printf("\n> ")
 		case keyboard.KeyArrowLeft, 'h':
 			err = r.Left()
 		case keyboard.KeyArrowDown, 'j':
@@ -155,7 +178,7 @@ func CommandLoop(r *roku.Remote) {
 			err = r.Play()
 		case keyboard.KeyEnter:
 			err = r.Select()
-		case keyboard.KeyBackspace, 'B', 'u':
+		case keyboard.KeyBackspace, keyboard.KeyBackspace2, 'B', 'u':
 			err = r.Back()
 		case '+', keyboard.KeyCtrlK:
 			err = r.VolumeUp()
@@ -179,17 +202,20 @@ func CommandLoop(r *roku.Remote) {
 				for _, app := range apps {
 					fmt.Printf("[%s]\t%s\n", app.Id, app.Name)
 				}
+
+				fmt.Printf("> ")
 			}
 		case 's':
 			var ps *roku.PlayerStatus
 
 			ps, err = r.PlayerStatus()
 			if err == nil {
-				fmt.Printf("App: [%s] %s\n", ps.Plugin.Id, ps.Plugin.Name)
+				fmt.Printf("Media Player\nApp: [%s] %s\n", ps.Plugin.Id, ps.Plugin.Name)
 				fmt.Printf("Error: %v State: %s\n", ps.Error, ps.State)
 				fmt.Printf("Bandwidth: %s\n", ps.Plugin.Bandwidth)
 				fmt.Printf("Position: %s\n", ps.Position)
 				fmt.Printf("Live: %v\n", ps.IsLive)
+				fmt.Printf("> ")
 			}
 		case 'p':
 			if r.Device.PowerMode == "PowerOn" {
@@ -201,6 +227,7 @@ func CommandLoop(r *roku.Remote) {
 			_ = r.Refresh()
 		default:
 			log.Printf("'%s' key does not match any command", string(key))
+			fmt.Printf("> ")
 		}
 
 		LogIf(err)

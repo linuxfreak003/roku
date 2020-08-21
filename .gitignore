@@ -16,3 +16,4 @@
 go.sum
 roku
 !roku/
+*.swp
