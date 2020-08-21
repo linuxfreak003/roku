@@ -144,6 +144,7 @@ func FindRokuDevices() ([]*RokuDevice, error) {
 	if err != nil {
 		log.Printf("could not find any devices on network: %v", err)
 	}
+
 	res := []*RokuDevice{}
 	for _, d := range devices {
 		res = append(res, &RokuDevice{
@@ -151,6 +152,7 @@ func FindRokuDevices() ([]*RokuDevice, error) {
 			Name: d.Server,
 		})
 	}
+
 	return res, nil
 }
 
