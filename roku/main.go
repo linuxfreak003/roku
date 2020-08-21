@@ -19,7 +19,7 @@ var UsageMessage = ` +----------------------------------+-----------------------
   | Volume Mute    m                | Home            H                |
   | Power Off/On   p                | Info/Settings   i                |
   | List Apps      a                | Player Status   s                |
-  | Enter Input    /                |                                  |
+  | Enter Input    / + <Text>       | Launch (By ID)  <Ctrl-L> + ID    |
   +---------------------------------+----------------------------------+
   (press q, Esc, or Ctrl-C to exit)`
 
@@ -145,25 +145,21 @@ func CommandLoop(r *roku.Remote) {
 		case '/':
 			fmt.Printf("Enter Text: ")
 
-			s := ""
-
-			for char, key, err = keyboard.GetKey(); key != keyboard.KeyEnter; char, key, err = keyboard.GetKey() {
-				if err != nil {
-					break
-				}
-
-				val := string(key)
-				if key == 0 {
-					val = string(char)
-				}
-
-				fmt.Printf("%s", val)
-				s += val
+			var s string
+			s, err = GetInput()
+			if err != nil {
+				break
 			}
-
 			err = r.InputString(s + "\n")
 
 			fmt.Printf("\n> ")
+		case keyboard.KeyCtrlL:
+			var s string
+			s, err = GetInput()
+
+			err = r.Launch(&roku.App{
+				Id: s,
+			})
 		case keyboard.KeyArrowLeft, 'h':
 			err = r.Left()
 		case keyboard.KeyArrowDown, 'j':
@@ -232,4 +228,24 @@ func CommandLoop(r *roku.Remote) {
 
 		LogIf(err)
 	}
+}
+
+func GetInput() (string, error) {
+	var s string
+
+	for char, key, err := keyboard.GetKey(); key != keyboard.KeyEnter; char, key, err = keyboard.GetKey() {
+		if err != nil {
+			return "", err
+		}
+
+		val := string(key)
+		if key == 0 {
+			val = string(char)
+		}
+
+		fmt.Printf("%s", val)
+		s += val
+	}
+
+	return s, nil
 }

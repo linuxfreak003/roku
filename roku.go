@@ -164,7 +164,7 @@ func NewRemote(addr string) (*Remote, error) {
 
 	info, err := r.DeviceInfo()
 	if err != nil {
-		return nil, fmt.Errorf("could not connect to roku: %v", err)
+		return nil, err
 	}
 
 	r.Device = info
@@ -176,7 +176,7 @@ func NewRemote(addr string) (*Remote, error) {
 func (r *Remote) Refresh() error {
 	info, err := r.DeviceInfo()
 	if err != nil {
-		return fmt.Errorf("could not connect to roku: %v", err)
+		return err
 	}
 
 	r.Device = info
@@ -188,7 +188,7 @@ func (r *Remote) Refresh() error {
 func (r *Remote) ActiveApp() (*App, error) {
 	b, err := r.query("active-app")
 	if err != nil {
-		return nil, fmt.Errorf("could not query active-app: %v", err)
+		return nil, err
 	}
 
 	type ActiveApp struct {
@@ -217,18 +217,18 @@ func (r *Remote) Install(app *App) error {
 // Input sends a string of input
 // (useful for things like filling a search box)
 func (r *Remote) InputString(in string) error {
-	return r.literal_input(in)
+	return r.literalInput(in)
 }
 
 func (r *Remote) InputRune(rn rune) error {
-	return r.literal_input(string(rn))
+	return r.literalInput(string(rn))
 }
 
 // Apps will get all installed apps fromt he device
 func (r *Remote) Apps() ([]*App, error) {
 	b, err := r.query("apps")
 	if err != nil {
-		return nil, fmt.Errorf("could not query apps: %v", err)
+		return nil, err
 	}
 
 	type Apps struct {
@@ -246,7 +246,7 @@ func (r *Remote) Apps() ([]*App, error) {
 func (r *Remote) DeviceInfo() (*DeviceInfo, error) {
 	b, err := r.query("device-info")
 	if err != nil {
-		return nil, fmt.Errorf("could not query: %v", err)
+		return nil, err
 	}
 
 	info := &DeviceInfo{}
@@ -342,18 +342,12 @@ func (r *Remote) ChannelUp() error { return r.keypress("ChannelUp") }
 func (r *Remote) ChannelDown() error { return r.keypress("ChannelDown") }
 
 // helper method for hitting the `install` endpoint
-func (r *Remote) install(appId string) error {
-	URL := fmt.Sprintf("http://%s/install/%s", r.Addr, appId)
-	client := &http.Client{}
+func (r *Remote) install(appID string) error {
+	URL := fmt.Sprintf("http://%s/install/%s", r.Addr, appID)
 
-	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	resp, err := http.Post(URL, "", nil)
 	if err != nil {
-		return fmt.Errorf("could not build HTTP request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("could not send HTTP request: %v", err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -361,18 +355,12 @@ func (r *Remote) install(appId string) error {
 }
 
 // helper method for hitting the `launch` endpoint
-func (r *Remote) launch(appId string) error {
-	URL := fmt.Sprintf("http://%s/launch/%s", r.Addr, appId)
-	client := &http.Client{}
+func (r *Remote) launch(appID string) error {
+	URL := fmt.Sprintf("http://%s/launch/%s", r.Addr, appID)
 
-	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	resp, err := http.Post(URL, "", nil)
 	if err != nil {
-		return fmt.Errorf("could not build HTTP request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("could not send HTTP request: %v", err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -382,16 +370,10 @@ func (r *Remote) launch(appId string) error {
 // helper method for hitting the `query` endpoint
 func (r *Remote) query(cmd string) ([]byte, error) {
 	URL := fmt.Sprintf("http://%s/query/%s", r.Addr, cmd)
-	client := &http.Client{}
 
-	req, err := http.NewRequest(http.MethodGet, URL, nil)
+	resp, err := http.Get(URL)
 	if err != nil {
-		return nil, fmt.Errorf("could not build HTTP request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("could not send HTTP request: %v", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -399,30 +381,26 @@ func (r *Remote) query(cmd string) ([]byte, error) {
 }
 
 // helper method for entering literal input
-func (r *Remote) literal_input(input string) error {
+func (r *Remote) literalInput(input string) error {
 	for _, c := range input {
 		escaped := url.QueryEscape(string(c))
+
 		err := r.keypress("Lit_" + escaped)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
 // helper method for hitting the `keypress` endpoint
 func (r *Remote) keypress(cmd string) error {
 	URL := fmt.Sprintf("http://%s/keypress/%s", r.Addr, cmd)
-	client := &http.Client{}
 
-	req, err := http.NewRequest(http.MethodPost, URL, nil)
+	resp, err := http.Post(URL, "", nil)
 	if err != nil {
-		return fmt.Errorf("could not build HTTP request: %v", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("could not send HTTP request: %v", err)
+		return err
 	}
 	defer resp.Body.Close()
 
