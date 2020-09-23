@@ -214,13 +214,19 @@ func CommandLoop(r *roku.Remote) {
 				fmt.Printf("> ")
 			}
 		case 'p':
-			if r.Device.PowerMode == "PowerOn" {
-				err = r.PowerOff()
-			} else {
-				err = r.PowerOn()
-			}
-			// Refresh DeviceInfo
+			// Refresh DeviceInfo current state
 			_ = r.Refresh()
+
+			switch r.Device.PowerMode {
+			case "PowerOn":
+				err = r.PowerOff()
+				r.Device.PowerMode = "Ready"
+			case "Ready":
+				err = r.PowerOn()
+				r.Device.PowerMode = "PowerOn"
+			default:
+				err = fmt.Errorf("Unrecognized power mode: %s", r.Device.PowerMode)
+			}
 		default:
 			log.Printf("'%s' key does not match any command", string(key))
 			fmt.Printf("> ")
