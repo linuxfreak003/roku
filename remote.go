@@ -1,7 +1,7 @@
 // Package roku implements a library for
 // interacting with Roku devices using the
 // External Control Protocol (ECP)
-// Example can be found at http://github.com/linuxfreak003/roku
+// Example can be found at http://github.com/linuxfreak003/roku/roku
 package roku
 
 import (

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -23,8 +24,7 @@ var UsageMessage = ` +----------------------------------+-----------------------
   +---------------------------------+----------------------------------+
   (press q, Esc, or Ctrl-C to exit)`
 
-var NoDevicesError = fmt.Errorf(`Could not find any roku devices.
-Please Try again, or enter IP address manually with '-ip' flag`)
+var ErrNoDevices = fmt.Errorf(`no devices found`)
 
 func Usage() {
 	fmt.Println(UsageMessage)
@@ -46,7 +46,7 @@ func GetRokuAddress() (string, error) {
 	}
 
 	if len(devices) == 0 {
-		return "", NoDevicesError
+		return "", ErrNoDevices
 	}
 
 	var index int
@@ -65,7 +65,7 @@ func GetRokuAddress() (string, error) {
 		// to select any options higher than '9'
 		char, _, err := keyboard.GetSingleKey()
 		if err != nil {
-			return "", fmt.Errorf("Could not get selection: %v", err)
+			return "", fmt.Errorf("could not get selection: %w", err)
 		}
 
 		index := int(char - 48)
@@ -90,7 +90,12 @@ func main() {
 	var err error
 	if ip == "" {
 		addr, err = GetRokuAddress()
-		if err != nil {
+		if errors.Is(err, ErrNoDevices) {
+			fmt.Println(`Could not find any roku devices.
+Please Try again, or enter IP address manually with '-ip' flag`)
+
+			return
+		} else if err != nil {
 			log.Fatalf("Error: %v", err)
 		}
 	}
@@ -147,15 +152,21 @@ func CommandLoop(r *roku.Remote) {
 
 			var s string
 			s, err = GetInput()
+
 			if err != nil {
 				break
 			}
+
 			err = r.InputString(s + "\n")
 
 			fmt.Printf("\n> ")
 		case keyboard.KeyCtrlL:
 			var s string
 			s, err = GetInput()
+
+			if err != nil {
+				break
+			}
 
 			err = r.Launch(&roku.App{
 				Id: s,
@@ -168,6 +179,8 @@ func CommandLoop(r *roku.Remote) {
 			err = r.Up()
 		case keyboard.KeyArrowRight, 'l':
 			err = r.Right()
+		case 'i':
+			err = r.Info()
 		case 'H':
 			err = r.Home()
 		case keyboard.KeySpace:
@@ -241,7 +254,7 @@ func GetInput() (string, error) {
 
 	for char, key, err := keyboard.GetKey(); key != keyboard.KeyEnter; char, key, err = keyboard.GetKey() {
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("coult not get key: %w", err)
 		}
 
 		val := string(key)
