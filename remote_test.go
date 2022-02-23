@@ -3,8 +3,8 @@ package roku_test
 import (
 	"testing"
 
-	"github.com/linuxfreak003/roku"
 	. "github.com/onsi/gomega"
+	"jonwillia.ms/roku"
 )
 
 func TestRoku(t *testing.T) {

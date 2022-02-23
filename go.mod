@@ -1,4 +1,4 @@
-module github.com/WIZARDISHUNGRY/roku
+module jonwillia.ms/roku
 
 go 1.14
 

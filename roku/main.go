@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/eiannone/keyboard"
-	"github.com/linuxfreak003/roku"
+	"jonwillia.ms/roku"
 )
 
 var UsageMessage = ` +----------------------------------+----------------------------------+
