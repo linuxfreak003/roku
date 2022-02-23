@@ -11,9 +11,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"time"
 
-	ssdp "github.com/bcurren/go-ssdp"
+	ssdp "github.com/koron/go-ssdp"
 )
 
 // Remote is the base type for interacting with the Roku
@@ -34,15 +33,19 @@ type RokuDevice struct {
 // FindRokuDevices will do and SSDP search to
 // find all Roku devices on the network
 func FindRokuDevices() ([]*RokuDevice, error) {
-	devices, err := ssdp.Search("roku:ecp", 3*time.Second)
+	devices, err := ssdp.Search("roku:ecp", 3, "")
 	if err != nil {
 		log.Printf("could not find any devices on network: %v", err)
 	}
 
 	res := []*RokuDevice{}
 	for _, d := range devices {
+		u, err := url.Parse(d.Location)
+		if err != nil {
+			return nil, err
+		}
 		res = append(res, &RokuDevice{
-			Addr: d.Location.Host,
+			Addr: u.Host,
 			Name: d.Server,
 		})
 	}
