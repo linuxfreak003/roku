@@ -1,4 +1,4 @@
-module github.com/linuxfreak003/roku
+module github.com/WIZARDISHUNGRY/roku
 
 go 1.14
 

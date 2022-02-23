@@ -100,7 +100,12 @@ func (r *Remote) ActiveApp() (*App, error) {
 
 // Launch will launch a given App
 func (r *Remote) Launch(app *App) error {
-	return r.launch(app.Id)
+	return r.launch(app.Id, nil)
+}
+
+// LaunchWithValues will launch a given App with exta arguments
+func (r *Remote) LaunchWithValues(app *App, values url.Values) error {
+	return r.launch(app.Id, values)
 }
 
 // Install will install the given app.
@@ -251,8 +256,8 @@ func (r *Remote) install(appID string) error {
 }
 
 // helper method for hitting the `launch` endpoint
-func (r *Remote) launch(appID string) error {
-	URL := fmt.Sprintf("http://%s/launch/%s", r.Addr, appID)
+func (r *Remote) launch(appID string, values url.Values) error {
+	URL := fmt.Sprintf("http://%s/launch/%s?%s", r.Addr, appID, values.Encode())
 
 	resp, err := http.Post(URL, "", nil)
 	if err != nil {
