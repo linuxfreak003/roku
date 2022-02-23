@@ -1,5 +1,6 @@
 # roku
-[![Documentation](https://godoc.org/github.com/linuxfreak003/roku?status.svg)](http://godoc.org/github.com/linuxfreak003/roku)
+
+[![Documentation](https://godoc.org/jonwillia.ms/roku?status.svg)](http://godoc.org/jonwillia.ms/roku)
 
 Roku ECP library written in Go
 
@@ -14,7 +15,7 @@ It is now turning into a Roku [ECP](https://developer.roku.com/docs/developer-pr
 ### Installation
 
 ```bash
-go get -u github.com/linuxfreak003/roku
+go get -u jonwillia.ms/roku
 ```
 or use `go mod`
 
@@ -24,7 +25,7 @@ or use `go mod`
 package main
 
 import (
-  "github.com/linuxfreak003/roku"
+  "jonwillia.ms/roku"
 )
 
 func main() {
@@ -54,7 +55,7 @@ func main() {
 ### Installation
 
 ```bash
-go get -u github.com/linuxfreak003/roku/roku
+go get -u jonwillia.ms/roku
 ```
 
 ### Usage
